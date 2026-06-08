@@ -171,7 +171,7 @@ function redirecionarParaExtensao(dados) {
 }
 
 function setBusy(form, busy) {
-  form.querySelectorAll("input, button").forEach((node) => {
+  form.querySelectorAll("input, button, select").forEach((node) => {
     node.disabled = busy;
   });
 }

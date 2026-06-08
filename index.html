@@ -53,11 +53,15 @@
         <div class="grid-two">
           <label>
             Turma
-            <input name="turma" type="number" min="1" step="1" />
+            <select name="turma">
+              <option value="">Selecione...</option>
+              <option value="1">Matutino</option>
+              <option value="2">Vespertino</option>
+            </select>
           </label>
           <label>
             Período
-            <input name="periodo" type="number" min="1" step="1" />
+            <input name="periodo" type="number" min="1" max="6" step="1" />
           </label>
         </div>
         <label>
