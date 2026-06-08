@@ -12,8 +12,8 @@ const tabs = Array.from(document.querySelectorAll(".tab"));
 const loginEmail = loginForm.querySelector('input[name="email"]');
 const registerEmail = registerForm.querySelector('input[name="email"]');
 
-loginEmail.value = emailInicial;
-registerEmail.value = emailInicial;
+if (loginEmail) loginEmail.value = emailInicial;
+if (registerEmail) registerEmail.value = emailInicial;
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -22,7 +22,7 @@ tabs.forEach((tab) => {
     loginForm.classList.toggle("active", target === "login");
     registerForm.classList.toggle("active", target === "register");
     setStatus(target === "login"
-      ? "Faça login com seu e-mail e token do Gmail."
+      ? "Faça login com seu e-mail."
       : "Crie sua conta usando os dados exigidos pela API do IFMS.");
   });
 });
@@ -31,7 +31,7 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const dados = new FormData(loginForm);
   const email = sanitizarTexto(dados.get("email"));
-  const tokenGmail = sanitizarTexto(dados.get("token_gmail"));
+  const tokenGmail = email; 
   const remember = dados.get("remember") === "on";
 
   try {
@@ -44,7 +44,7 @@ loginForm.addEventListener("submit", async (event) => {
     }
 
     if (usuario.tokenGmail !== tokenGmail) {
-      throw new Error("Token Gmail inválido.");
+      throw new Error("E-mail não confere ou conta inválida.");
     }
 
     redirecionarParaExtensao({
@@ -67,7 +67,7 @@ registerForm.addEventListener("submit", async (event) => {
   const payload = {
     nome: sanitizarTexto(dados.get("nome")),
     email: sanitizarTexto(dados.get("email")),
-    token_gmail: sanitizarTexto(dados.get("token_gmail")),
+    token_gmail: sanitizarTexto(dados.get("email")),
     turma: toNumber(dados.get("turma")),
     periodo: toNumber(dados.get("periodo")),
     url_image_perfil: sanitizarTexto(dados.get("url_image_perfil")),
