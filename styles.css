@@ -1,0 +1,250 @@
+:root {
+  color-scheme: dark;
+  --bg-1: #07111f;
+  --bg-2: #0d1728;
+  --panel: rgba(12, 20, 33, 0.88);
+  --border: rgba(159, 180, 209, 0.18);
+  --text: #eef4ff;
+  --muted: #b7c7db;
+  --accent: #4cba72;
+  --accent-2: #7de2a4;
+  --danger: #ff7d7d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(76, 186, 114, 0.22), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(100, 181, 246, 0.18), transparent 30%),
+    linear-gradient(160deg, var(--bg-1), var(--bg-2));
+}
+
+.layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 480px);
+  gap: 28px;
+  align-items: center;
+  padding: 32px;
+}
+
+.hero,
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+
+.hero {
+  padding: 40px;
+}
+
+.panel {
+  padding: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  color: #86a0b7;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 5vw, 4.25rem);
+  line-height: 0.98;
+}
+
+.lead {
+  margin: 18px 0 0;
+  max-width: 34rem;
+  font-size: 1.05rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.chips span {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tab,
+button[type="submit"] {
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+}
+
+.tab {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #07111f;
+}
+
+button:hover,
+.tab:hover {
+  transform: translateY(-1px);
+}
+
+.notice,
+.status,
+.forgot {
+  border-radius: 18px;
+  border: 1px solid rgba(159, 180, 209, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.notice {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.status {
+  min-height: 64px;
+  margin-top: 16px;
+  padding: 14px 16px;
+}
+
+.forgot {
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.forgot h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.form {
+  display: none;
+  gap: 12px;
+}
+
+.form.active {
+  display: grid;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(159, 180, 209, 0.18);
+  border-radius: 16px;
+  padding: 13px 14px;
+  font: inherit;
+  color: var(--text);
+  background: rgba(7, 17, 31, 0.7);
+  outline: none;
+}
+
+input:focus {
+  border-color: rgba(125, 226, 164, 0.8);
+  box-shadow: 0 0 0 3px rgba(76, 186, 114, 0.16);
+}
+
+.inline {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.inline input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+button[type="submit"] {
+  margin-top: 4px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #07111f;
+}
+
+button[disabled] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.error {
+  color: var(--danger);
+}
+
+@media (max-width: 920px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .layout {
+    padding: 18px;
+  }
+
+  .hero,
+  .panel {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .grid-two {
+    grid-template-columns: 1fr;
+  }
+}
