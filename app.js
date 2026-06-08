@@ -67,7 +67,7 @@ registerForm.addEventListener("submit", async (event) => {
   const payload = {
     nome: sanitizarTexto(dados.get("nome")),
     email: sanitizarTexto(dados.get("email")),
-    token_gmail: sanitizarTexto(dados.get("senha")), // A senha servirá como token
+    token_gmail: sanitizarTexto(dados.get("senha")),
     turma: toNumber(dados.get("turma")),
     periodo: toNumber(dados.get("periodo")),
     url_image_perfil: sanitizarTexto(dados.get("url_image_perfil")),
