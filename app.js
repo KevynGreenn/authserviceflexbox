@@ -43,14 +43,14 @@ loginForm.addEventListener("submit", async (event) => {
       throw new Error("Conta não encontrada. Crie uma conta antes de fazer login.");
     }
 
-    if (usuario.tokenGmail !== senha) {
+    if (usuario.tokenGmail && usuario.tokenGmail !== senha) {
       throw new Error("Senha incorreta.");
     }
 
     redirecionarParaExtensao({
       nome: usuario.nome,
       email: usuario.email,
-      tokenGmail: usuario.tokenGmail,
+      tokenGmail: senha,
       remember,
       mode: "login",
     });
@@ -149,7 +149,8 @@ function normalizarUsuario(dados) {
   const email = sanitizarTexto(registro.email);
   const tokenGmail = sanitizarTexto(registro.token_gmail || registro.tokenGmail);
 
-  if (!nome || !email || !tokenGmail) {
+  // Não exigimos o token_gmail da API aqui para evitar que a API oculte a senha e quebre o fluxo
+  if (!nome || !email) {
     return undefined;
   }
 
@@ -158,7 +159,7 @@ function normalizarUsuario(dados) {
 
 function redirecionarParaExtensao(dados) {
   if (!callbackUrl) {
-    throw new Error("Callback da extensão não informado.");
+    throw new Error("Abra o login diretamente na extensão do VS Code para funcionar.");
   }
 
   const url = new URL(callbackUrl);
@@ -167,7 +168,17 @@ function redirecionarParaExtensao(dados) {
   url.searchParams.set("token_gmail", dados.tokenGmail);
   url.searchParams.set("remember", dados.remember ? "1" : "0");
   url.searchParams.set("mode", dados.mode);
-  window.location.href = url.toString();
+
+  setStatus("Redirecionando para o VS Code... Você já pode fechar esta página.", false);
+
+  // Atraso de 2 segundos apenas no registro para o banco de dados da API ter tempo de salvar
+  if (dados.mode === "register") {
+    setTimeout(() => {
+      window.location.href = url.toString();
+    }, 2000);
+  } else {
+    window.location.href = url.toString();
+  }
 }
 
 function setBusy(form, busy) {
@@ -179,11 +190,6 @@ function setBusy(form, busy) {
 function setStatus(message, isError = false) {
   statusBox.textContent = message;
   statusBox.classList.toggle("error", Boolean(isError));
-  if (notice) {
-    notice.textContent = isError
-      ? "Verifique os dados e tente novamente."
-      : "Preencha seus dados para continuar. A validação é feita diretamente na API do IFMS.";
-  }
 }
 
 function sanitizarTexto(valor) {
