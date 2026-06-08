@@ -22,7 +22,7 @@ tabs.forEach((tab) => {
     loginForm.classList.toggle("active", target === "login");
     registerForm.classList.toggle("active", target === "register");
     setStatus(target === "login"
-      ? "Faça login com seu e-mail."
+      ? "Faça login com seu e-mail e senha."
       : "Crie sua conta usando os dados exigidos pela API do IFMS.");
   });
 });
@@ -31,7 +31,7 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const dados = new FormData(loginForm);
   const email = sanitizarTexto(dados.get("email"));
-  const tokenGmail = email; 
+  const senha = sanitizarTexto(dados.get("senha"));
   const remember = dados.get("remember") === "on";
 
   try {
@@ -43,8 +43,8 @@ loginForm.addEventListener("submit", async (event) => {
       throw new Error("Conta não encontrada. Crie uma conta antes de fazer login.");
     }
 
-    if (usuario.tokenGmail !== tokenGmail) {
-      throw new Error("E-mail não confere ou conta inválida.");
+    if (usuario.tokenGmail !== senha) {
+      throw new Error("Senha incorreta.");
     }
 
     redirecionarParaExtensao({
@@ -67,7 +67,7 @@ registerForm.addEventListener("submit", async (event) => {
   const payload = {
     nome: sanitizarTexto(dados.get("nome")),
     email: sanitizarTexto(dados.get("email")),
-    token_gmail: sanitizarTexto(dados.get("email")),
+    token_gmail: sanitizarTexto(dados.get("senha")), // A senha servirá como token
     turma: toNumber(dados.get("turma")),
     periodo: toNumber(dados.get("periodo")),
     url_image_perfil: sanitizarTexto(dados.get("url_image_perfil")),
