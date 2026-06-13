@@ -2,96 +2,28 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlexBox Trainer | Login IFMS</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <title>Login Seguro | FlexBox Trainer</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #08111d; color: #fff; font-family: sans-serif; }
+    .box { text-align: center; background: #111723; padding: 40px; border-radius: 12px; border: 1px solid #2a3140; }
+    p { color: #888; margin-bottom: 24px; }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <main class="layout">
-    <section class="hero">
-      <p class="eyebrow">FlexBox Trainer</p>
-      <h1>Torne sua experiência melhor 🚀</h1>
-      <p class="lead">Crie uma conta ou faça login para usar a extensão com a API do IFMS.</p>
-      <div class="chips">
-        <span>Login obrigatório</span>
-        <span>SecretStorage no VS Code</span>
-        <span>Callback automático</span>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="tabs">
-        <button class="tab active" data-tab="login">Login</button>
-        <button class="tab" data-tab="register">Cadastro</button>
-      </div>
-
-      <div class="notice" id="notice">
-        Preencha seus dados para continuar. A validação é feita diretamente na API do IFMS.
-      </div>
-
-      <form id="loginForm" class="form active">
-        <label>
-          E-mail
-          <input name="email" type="email" autocomplete="email" required />
-        </label>
-        <label>
-          Senha
-          <input name="senha" type="password" autocomplete="current-password" required />
-        </label>
-        <label class="inline">
-          <input name="remember" type="checkbox" />
-          <span>Continuar conectado</span>
-        </label>
-        <button type="submit">Fazer Login</button>
-      </form>
-
-      <form id="registerForm" class="form">
-        <label>
-          Nome completo
-          <input name="nome" type="text" autocomplete="name" required />
-        </label>
-        <label>
-          E-mail
-          <input name="email" type="email" autocomplete="email" required />
-        </label>
-        <label>
-          Senha
-          <input name="senha" type="password" autocomplete="new-password" required />
-        </label>
-        <div class="grid-two">
-          <label>
-            Turma
-            <select name="turma">
-              <option value="">Selecione...</option>
-              <option value="1">Matutino</option>
-              <option value="2">Vespertino</option>
-            </select>
-          </label>
-          <label>
-            Período
-            <input name="periodo" type="number" min="1" max="6" step="1" />
-          </label>
-        </div>
-        <label>
-          URL da foto de perfil
-          <input name="url_image_perfil" type="url" placeholder="https://..." />
-        </label>
-        <label class="inline">
-          <input name="remember" type="checkbox" checked />
-          <span>Continuar conectado</span>
-        </label>
-        <button type="submit">Criar Conta</button>
-      </form>
-
-      <section class="forgot">
-        <h2>Esqueci minha senha</h2>
-        <p>A API pública atual não expõe recuperação de senha. Se a conta já existir, use o login. Caso contrário, crie uma nova conta.</p>
-      </section>
-
-      <div class="status" id="status">Aguardando ação.</div>
-    </section>
-  </main>
-
+  <div class="box">
+    <h2>Login via Google</h2>
+    <p>Autentique-se de forma segura para continuar no VS Code.</p>
+    
+    <div id="g_id_onload"
+         data-client_id="248632474679-8663hgsnun8q5ddq98cc2kf23u23844p.apps.googleusercontent.com.apps.googleusercontent.com"
+         data-callback="handleGoogleLogin"
+         data-auto_prompt="false">
+    </div>
+    
+    <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large"></div>
+    <div id="status" style="margin-top: 15px; color: #4cba72;"></div>
+  </div>
   <script src="./app.js"></script>
 </body>
 </html>
