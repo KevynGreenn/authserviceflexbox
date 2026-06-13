@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const callbackUrl = params.get("callback") || "";
-const apiBaseUrl = (params.get("apiBaseUrl") || "https://ifms.pro.br:6005").replace(/\/+$/, "");
+const apiBaseUrl = (params.get("apiBaseUrl") || "http://ifms.pro.br:6009").replace(/\/+$/, "");
 const emailInicial = params.get("email") || "";
 
 const notice = document.getElementById("notice");
