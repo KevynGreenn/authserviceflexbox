@@ -15,6 +15,14 @@ const registerEmail = registerForm.querySelector('input[name="email"]');
 if (loginEmail) loginEmail.value = emailInicial;
 if (registerEmail) registerEmail.value = emailInicial;
 
+// FUNÇÃO PROXY: Evita que o GitHub Pages bloqueie a API que é HTTP.
+async function fetchComProxy(url, opcoes = {}) {
+  const urlFinal = url.startsWith("http://")
+    ? `https://corsproxy.io/?${encodeURIComponent(url)}`
+    : url;
+  return fetch(urlFinal, opcoes);
+}
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     const target = tab.dataset.tab;
@@ -83,7 +91,8 @@ registerForm.addEventListener("submit", async (event) => {
       throw new Error("Este e-mail já possui uma conta. Use o login.");
     }
 
-    const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
+    // AQUI USAMOS O PROXY
+    const resposta = await fetchComProxy(`${apiBaseUrl}/usuarios`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -118,7 +127,8 @@ registerForm.addEventListener("submit", async (event) => {
 });
 
 async function buscarUsuarioPorEmail(email) {
-  const resposta = await fetch(`${apiBaseUrl}/usuarios/por-email?email=${encodeURIComponent(email)}`, {
+  // AQUI USAMOS O PROXY
+  const resposta = await fetchComProxy(`${apiBaseUrl}/usuarios/por-email?email=${encodeURIComponent(email)}`, {
     headers: {
       Accept: "application/json",
     },
@@ -136,24 +146,15 @@ async function buscarUsuarioPorEmail(email) {
 }
 
 function normalizarUsuario(dados) {
-  if (!dados) {
-    return undefined;
-  }
-
+  if (!dados) return undefined;
   const registro = Array.isArray(dados) ? dados[0] : dados;
-  if (!registro) {
-    return undefined;
-  }
+  if (!registro) return undefined;
 
   const nome = sanitizarTexto(registro.nome || registro.name || registro.nome_completo);
   const email = sanitizarTexto(registro.email);
   const tokenGmail = sanitizarTexto(registro.token_gmail || registro.tokenGmail);
 
-  // Não exigimos o token_gmail da API aqui para evitar que a API oculte a senha e quebre o fluxo
-  if (!nome || !email) {
-    return undefined;
-  }
-
+  if (!nome || !email) return undefined;
   return { nome, email, tokenGmail };
 }
 
@@ -171,7 +172,6 @@ function redirecionarParaExtensao(dados) {
 
   setStatus("Redirecionando para o VS Code... Você já pode fechar esta página.", false);
 
-  // Atraso de 2 segundos apenas no registro para o banco de dados da API ter tempo de salvar
   if (dados.mode === "register") {
     setTimeout(() => {
       window.location.href = url.toString();
@@ -198,9 +198,7 @@ function sanitizarTexto(valor) {
 
 function toNumber(valor) {
   const texto = sanitizarTexto(valor);
-  if (!texto) {
-    return undefined;
-  }
+  if (!texto) return undefined;
   const numero = Number(texto);
   return Number.isFinite(numero) ? numero : undefined;
 }
