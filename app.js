@@ -85,22 +85,21 @@ registerForm.addEventListener("submit", async (event) => {
       throw new Error("Este e-mail já possui uma conta. Use o login.");
     }
 
-    // Se o erro de CORS persistir após essa alteração, 
-    // certifique-se de que o backend (FastAPI) possua o CORSMiddleware ativado.
+    const bodyParams = new URLSearchParams();
+    bodyParams.set("nome", payload.nome);
+    bodyParams.set("email", payload.email);
+    if (payload.token_gmail) bodyParams.set("token_gmail", payload.token_gmail);
+    if (payload.turma) bodyParams.set("turma", String(payload.turma));
+    if (payload.periodo) bodyParams.set("periodo", String(payload.periodo));
+    if (payload.url_image_perfil) bodyParams.set("url_image_perfil", payload.url_image_perfil);
+
     const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Accept: "application/json",
       },
-      body: new URLSearchParams({
-        nome: payload.nome,
-        email: payload.email,
-        token_gmail: payload.token_gmail,
-        turma: payload.turma ? String(payload.turma) : "",
-        periodo: payload.periodo ? String(payload.periodo) : "",
-        url_image_perfil: payload.url_image_perfil,
-      }).toString(),
+      body: bodyParams.toString(),
     });
 
     if (!resposta.ok) {
