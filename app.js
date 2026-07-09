@@ -2,7 +2,7 @@
 
 const params = new URLSearchParams(window.location.search);
 const callbackUrl = params.get("callback") || "";
-const apiBaseUrl = (params.get("apiBaseUrl") || "https://ifms.pro.br:6005").replace(/\/+$/, "");
+const apiBaseUrl = (params.get("apiBaseUrl") || "https://frontendteamscup.com.br").replace(/\/+$/, "");
 const emailInicial = params.get("email") || "";
 
 const notice = document.getElementById("notice");
@@ -25,7 +25,7 @@ tabs.forEach((tab) => {
     registerForm.classList.toggle("active", target === "register");
     setStatus(target === "login"
       ? "Faça login com seu e-mail e token do Gmail."
-      : "Crie sua conta usando os dados exigidos pela API do IFMS.");
+      : "Crie sua conta usando os dados exigidos pela API.");
   });
 });
 
@@ -38,7 +38,7 @@ loginForm.addEventListener("submit", async (event) => {
 
   try {
     setBusy(loginForm, true);
-    setStatus("Validando login no IFMS...");
+    setStatus("Validando login...");
     const usuario = await buscarUsuarioPorEmail(email);
 
     if (!usuario) {
@@ -78,7 +78,7 @@ registerForm.addEventListener("submit", async (event) => {
 
   try {
     setBusy(registerForm, true);
-    setStatus("Criando conta no IFMS...");
+    setStatus("Criando conta...");
 
     const existente = await buscarUsuarioPorEmail(payload.email);
     if (existente) {
@@ -189,7 +189,7 @@ function setStatus(message, isError = false) {
   if (notice) {
     notice.textContent = isError
       ? "Verifique os dados e tente novamente."
-      : "Preencha seus dados para continuar. A validação é feita diretamente na API do IFMS.";
+      : "Preencha seus dados para continuar. A validação é feita diretamente na API.";
   }
 }
 
