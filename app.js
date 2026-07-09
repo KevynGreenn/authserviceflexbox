@@ -3,157 +3,42 @@
 const params = new URLSearchParams(window.location.search);
 const callbackUrl = params.get("callback") || "";
 const apiBaseUrl = (params.get("apiBaseUrl") || "https://frontendteamscup.com.br/api").replace(/\/+$/, "");
-const emailInicial = params.get("email") || "";
 
 const notice = document.getElementById("notice");
 const statusBox = document.getElementById("status");
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const tabs = Array.from(document.querySelectorAll(".tab"));
 
-const loginEmail = loginForm.querySelector('input[name="email"]');
-const registerEmail = registerForm.querySelector('input[name="email"]');
-
-loginEmail.value = emailInicial;
-registerEmail.value = emailInicial;
-
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    const target = tab.dataset.tab;
-    tabs.forEach((item) => item.classList.toggle("active", item === tab));
-    loginForm.classList.toggle("active", target === "login");
-    registerForm.classList.toggle("active", target === "register");
-    setStatus(target === "login"
-      ? "Faça login com seu e-mail e token do Gmail."
-      : "Crie sua conta usando os dados exigidos pela API.");
-  });
-});
-
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const dados = new FormData(loginForm);
-  const email = sanitizarTexto(dados.get("email"));
-  const tokenGmail = sanitizarTexto(dados.get("token_gmail"));
-  const remember = dados.get("remember") === "on";
-
-  try {
-    setBusy(loginForm, true);
-    setStatus("Validando login...");
-    const usuario = await buscarUsuarioPorEmail(email);
-
-    if (!usuario) {
-      throw new Error("Conta não encontrada. Crie uma conta antes de fazer login.");
-    }
-
-    if (usuario.tokenGmail !== tokenGmail) {
-      throw new Error("Token Gmail inválido.");
-    }
-
-    redirecionarParaExtensao({
-      nome: usuario.nome,
-      email: usuario.email,
-      tokenGmail: usuario.tokenGmail,
-      remember,
-      mode: "login",
-    });
-  } catch (error) {
-    setStatus(erroTexto(error), true);
-  } finally {
-    setBusy(loginForm, false);
-  }
-});
-
-registerForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const dados = new FormData(registerForm);
-  const payload = {
-    nome: sanitizarTexto(dados.get("nome")),
-    email: sanitizarTexto(dados.get("email")),
-    token_gmail: sanitizarTexto(dados.get("token_gmail")),
-    turma: toNumber(dados.get("turma")),
-    periodo: toNumber(dados.get("periodo")),
-    url_image_perfil: sanitizarTexto(dados.get("url_image_perfil")),
-  };
-  const remember = dados.get("remember") === "on";
-
-  try {
-    setBusy(registerForm, true);
-    setStatus("Criando conta...");
-
-    const existente = await buscarUsuarioPorEmail(payload.email);
-    if (existente) {
-      throw new Error("Este e-mail já possui uma conta. Use o login.");
-    }
-
-    const bodyParams = new URLSearchParams();
-    bodyParams.set("nome", payload.nome);
-    bodyParams.set("email", payload.email);
-    if (payload.token_gmail) bodyParams.set("token_gmail", payload.token_gmail);
-    if (payload.turma) bodyParams.set("turma", String(payload.turma));
-    if (payload.periodo) bodyParams.set("periodo", String(payload.periodo));
-    if (payload.url_image_perfil) bodyParams.set("url_image_perfil", payload.url_image_perfil);
-
-    const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body: bodyParams.toString(),
-    });
-
-    if (!resposta.ok) {
-      throw new Error(await extrairDetalheDeErro(resposta));
-    }
-
-    redirecionarParaExtensao({
-      nome: payload.nome,
-      email: payload.email,
-      tokenGmail: payload.token_gmail,
-      remember,
-      mode: "register",
-    });
-  } catch (error) {
-    setStatus(erroTexto(error), true);
-  } finally {
-    setBusy(registerForm, false);
-  }
-});
-
-// --- Integração com Login do Google ---
-
-// Decodifica o payload do token JWT retornado pelo Google
 function decodificarJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split("")
+      .map(function (c) {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join("")
+  );
   return JSON.parse(jsonPayload);
 }
 
-// A função precisa ser global (anexada ao window) para o script do Google conseguir chamá-la
-window.handleGoogleLogin = async function(response) {
+window.handleGoogleLogin = async function (response) {
   try {
     setStatus("Processando conta Google...");
-    
-    // Extrai as informações do token do Google
+
     const googlePayload = decodificarJwt(response.credential);
     const emailGoogle = sanitizarTexto(googlePayload.email);
     const nomeGoogle = sanitizarTexto(googlePayload.name);
     const fotoGoogle = sanitizarTexto(googlePayload.picture);
-    
-    // Verifica se o usuário já existe na API
+
     let usuario = await buscarUsuarioPorEmail(emailGoogle);
 
-    // Se não existir, faz o cadastro automático na API
     if (!usuario) {
       setStatus("Criando conta com os dados do Google...");
-      
+
       const bodyParams = new URLSearchParams();
       bodyParams.set("nome", nomeGoogle);
       bodyParams.set("email", emailGoogle);
-      bodyParams.set("token_gmail", "google"); // Define um token padrão para contas Google
+      bodyParams.set("token_gmail", "google");
       bodyParams.set("url_image_perfil", fotoGoogle);
 
       const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
@@ -169,17 +54,14 @@ window.handleGoogleLogin = async function(response) {
         throw new Error(await extrairDetalheDeErro(resposta));
       }
 
-      // Preenche os dados do usuário recém-criado
       usuario = {
         nome: nomeGoogle,
         email: emailGoogle,
-        tokenGmail: "google"
+        tokenGmail: "google",
       };
     }
 
     setStatus("Redirecionando para o VS Code...");
-
-    // Redireciona o usuário para a extensão no VS Code
     redirecionarParaExtensao({
       nome: usuario.nome,
       email: usuario.email,
@@ -187,13 +69,10 @@ window.handleGoogleLogin = async function(response) {
       remember: true,
       mode: "login",
     });
-
   } catch (error) {
     setStatus(erroTexto(error), true);
   }
 };
-
-// --- Funções Auxiliares ---
 
 async function buscarUsuarioPorEmail(email) {
   const resposta = await fetch(`${apiBaseUrl}/usuarios/por-email?email=${encodeURIComponent(email)}`, {
@@ -245,36 +124,24 @@ function redirecionarParaExtensao(dados) {
   url.searchParams.set("token_gmail", dados.tokenGmail);
   url.searchParams.set("remember", dados.remember ? "1" : "0");
   url.searchParams.set("mode", dados.mode);
-  window.location.href = url.toString();
-}
-
-function setBusy(form, busy) {
-  form.querySelectorAll("input, button").forEach((node) => {
-    node.disabled = busy;
-  });
+  window.location.assign(url.toString());
 }
 
 function setStatus(message, isError = false) {
-  statusBox.textContent = message;
-  statusBox.classList.toggle("error", Boolean(isError));
+  if (statusBox) {
+    statusBox.textContent = message;
+    statusBox.classList.toggle("error", Boolean(isError));
+  }
+
   if (notice) {
     notice.textContent = isError
-      ? "Verifique os dados e tente novamente."
-      : "Preencha seus dados para continuar. A validação é feita diretamente na API.";
+      ? "Verifique a conta Google e tente novamente."
+      : "A autenticação é feita somente com Google.";
   }
 }
 
 function sanitizarTexto(valor) {
   return String(valor || "").trim();
-}
-
-function toNumber(valor) {
-  const texto = sanitizarTexto(valor);
-  if (!texto) {
-    return undefined;
-  }
-  const numero = Number(texto);
-  return Number.isFinite(numero) ? numero : undefined;
 }
 
 async function extrairDetalheDeErro(resposta) {
@@ -290,4 +157,18 @@ function erroTexto(error) {
   return error instanceof Error ? error.message : "Erro inesperado ao autenticar.";
 }
 
-setStatus("Pronto. Escolha entre login ou cadastro.");
+function carregarGoogleIdentity() {
+  if (location.protocol === "file:") {
+    setStatus("Abra esta página em http(s) para usar o botão do Google.", true);
+    return;
+  }
+
+  const googleScript = document.createElement("script");
+  googleScript.src = "https://accounts.google.com/gsi/client";
+  googleScript.async = true;
+  googleScript.defer = true;
+  document.head.appendChild(googleScript);
+}
+
+setStatus("Pronto. Faça login com Google.");
+carregarGoogleIdentity();
