@@ -2,7 +2,7 @@
 
 const params = new URLSearchParams(window.location.search);
 const callbackUrl = params.get("callback") || "";
-const apiBaseUrl = (params.get("apiBaseUrl") || "https://frontendteamscup.com.br").replace(/\/+$/, "");
+const apiBaseUrl = (params.get("apiBaseUrl") || "https://frontendteamscup.com.br/api").replace(/\/+$/, "");
 const emailInicial = params.get("email") || "";
 
 const notice = document.getElementById("notice");
@@ -85,13 +85,13 @@ registerForm.addEventListener("submit", async (event) => {
       throw new Error("Este e-mail já possui uma conta. Use o login.");
     }
 
-    const resposta = await fetch(`${apiBaseUrl}/api/usuarios`, {
+    // Se o erro de CORS persistir após essa alteração, 
+    // certifique-se de que o backend (FastAPI) possua o CORSMiddleware ativado.
+    const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
       method: "POST",
-      mode: "cors",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
-        "ngrok-skip-browser-warning": "true"
+        Accept: "application/json",
       },
       body: new URLSearchParams({
         nome: payload.nome,
@@ -122,12 +122,9 @@ registerForm.addEventListener("submit", async (event) => {
 });
 
 async function buscarUsuarioPorEmail(email) {
-  const resposta = await fetch(`${apiBaseUrl}/api/usuarios/por-email?email=${encodeURIComponent(email)}`, {
-    method: "GET",
-    mode: "cors",
+  const resposta = await fetch(`${apiBaseUrl}/usuarios/por-email?email=${encodeURIComponent(email)}`, {
     headers: {
-      "Accept": "application/json",
-      "ngrok-skip-browser-warning": "true"
+      Accept: "application/json",
     },
   });
 
