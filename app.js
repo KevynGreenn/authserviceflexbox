@@ -120,6 +120,81 @@ registerForm.addEventListener("submit", async (event) => {
   }
 });
 
+// --- Integração com Login do Google ---
+
+// Decodifica o payload do token JWT retornado pelo Google
+function decodificarJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
+}
+
+// A função precisa ser global (anexada ao window) para o script do Google conseguir chamá-la
+window.handleGoogleLogin = async function(response) {
+  try {
+    setStatus("Processando conta Google...");
+    
+    // Extrai as informações do token do Google
+    const googlePayload = decodificarJwt(response.credential);
+    const emailGoogle = sanitizarTexto(googlePayload.email);
+    const nomeGoogle = sanitizarTexto(googlePayload.name);
+    const fotoGoogle = sanitizarTexto(googlePayload.picture);
+    
+    // Verifica se o usuário já existe na API
+    let usuario = await buscarUsuarioPorEmail(emailGoogle);
+
+    // Se não existir, faz o cadastro automático na API
+    if (!usuario) {
+      setStatus("Criando conta com os dados do Google...");
+      
+      const bodyParams = new URLSearchParams();
+      bodyParams.set("nome", nomeGoogle);
+      bodyParams.set("email", emailGoogle);
+      bodyParams.set("token_gmail", "google"); // Define um token padrão para contas Google
+      bodyParams.set("url_image_perfil", fotoGoogle);
+
+      const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
+        body: bodyParams.toString(),
+      });
+
+      if (!resposta.ok) {
+        throw new Error(await extrairDetalheDeErro(resposta));
+      }
+
+      // Preenche os dados do usuário recém-criado
+      usuario = {
+        nome: nomeGoogle,
+        email: emailGoogle,
+        tokenGmail: "google"
+      };
+    }
+
+    setStatus("Redirecionando para o VS Code...");
+
+    // Redireciona o usuário para a extensão no VS Code
+    redirecionarParaExtensao({
+      nome: usuario.nome,
+      email: usuario.email,
+      tokenGmail: usuario.tokenGmail || "google",
+      remember: true,
+      mode: "login",
+    });
+
+  } catch (error) {
+    setStatus(erroTexto(error), true);
+  }
+};
+
+// --- Funções Auxiliares ---
+
 async function buscarUsuarioPorEmail(email) {
   const resposta = await fetch(`${apiBaseUrl}/usuarios/por-email?email=${encodeURIComponent(email)}`, {
     headers: {
@@ -161,7 +236,7 @@ function normalizarUsuario(dados) {
 
 function redirecionarParaExtensao(dados) {
   if (!callbackUrl) {
-    throw new Error("Callback da extensão não informado.");
+    throw new Error("Callback da extensão não informado. Inicie o login a partir do VS Code.");
   }
 
   const url = new URL(callbackUrl);
