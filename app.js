@@ -1,4 +1,4 @@
-// auth-site/app.js
+// auth-site/app.jss
 
 const params = new URLSearchParams(window.location.search);
 const callbackUrl = params.get("callback") || "";
