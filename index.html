@@ -2,25 +2,70 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login Seguro | FlexBox Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
+  <title>FlexBox Trainer | Autenticação</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="box">
-    <h2>Login via Google</h2>
-    <p>Depois do login, você será redirecionado de volta para o VS Code pela URL de callback informada pela extensão.</p>
-    <div id="notice">Clique em entrar com Google para continuar.</div>
+  <main class="layout">
+    <section class="hero" aria-labelledby="pageTitle">
+      <p class="eyebrow">FlexBox Trainer</p>
+      <h1 id="pageTitle">Entre. Treine. Evolua.</h1>
+      <p class="lead">
+        Autentique-se com sua conta Google para acessar os desafios e enviar
+        suas tentativas com segurança.
+      </p>
+      <div class="chips" aria-label="Recursos da autenticação">
+        <span>Google Identity Services</span>
+        <span>Token protegido no VS Code</span>
+        <span>Retorno automático</span>
+      </div>
+    </section>
 
-    <div id="g_id_onload"
-         data-client_id="248632474679-8663hgsnun8q5ddq98cc2kf23u23844p.apps.googleusercontent.com"
-         data-callback="handleGoogleLogin"
-         data-auto_prompt="false">
-    </div>
+    <section class="panel" aria-labelledby="authTitle">
+      <div class="tabs" role="tablist" aria-label="Modo de autenticação">
+        <button class="tab active" type="button" data-mode="login" role="tab" aria-selected="true">
+          Login
+        </button>
+        <button class="tab" type="button" data-mode="register" role="tab" aria-selected="false">
+          Cadastro
+        </button>
+      </div>
 
-    <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large"></div>
-    <div id="status" style="margin-top: 15px; color: #4cba72;"></div>
-  </div>
-  <script src="./app.js"></script>
+      <div class="notice" id="notice">
+        Use sua conta Google. O servidor trocará a credencial por um token seguro do sistema.
+      </div>
+
+      <section class="google-auth" id="googleAuth">
+        <div class="google-auth-heading">
+          <span class="google-mark" aria-hidden="true">G</span>
+          <div>
+            <h2 id="authTitle">Continuar com Google</h2>
+            <p>Nenhuma senha é armazenada por este site.</p>
+          </div>
+        </div>
+
+        <div id="googleButton" class="google-button-wrap" aria-live="polite"></div>
+
+        <label class="remember-option">
+          <input id="remember" type="checkbox" checked />
+          <span>Continuar conectado neste dispositivo</span>
+        </label>
+      </section>
+
+      <p class="security-note">
+        A credencial Google é validada em <code>/api/login</code>. Somente o token
+        emitido pelo sistema será usado nas demais requisições.
+      </p>
+
+      <div class="status" id="status" role="status" aria-live="polite">
+        Carregando autenticação Google...
+      </div>
+    </section>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="./app.js" defer></script>
 </body>
 </html>

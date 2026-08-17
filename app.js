@@ -1,174 +1,333 @@
-// auth-site/app.jss
+const GOOGLE_CLIENT_ID_PADRAO =
+  "248632474679-8663hgsnun8q5ddq98cc2kf23u23844p.apps.googleusercontent.com";
+const API_BASE_URL_PADRAO = "https://frontendteamscup.com.br/api";
+const TEMPO_LIMITE_LOGIN_MS = 15_000;
 
-const params = new URLSearchParams(window.location.search);
-const callbackUrl = params.get("callback") || "";
-const apiBaseUrl = (params.get("apiBaseUrl") || "https://frontendteamscup.com.br/api").replace(/\/+$/, "");
+const parametros = new URLSearchParams(window.location.search);
+const callbackUrl = sanitizarTexto(parametros.get("callback"));
+const callbackState = sanitizarTexto(parametros.get("state"));
+const googleClientId =
+  sanitizarTexto(parametros.get("googleClientId")) || GOOGLE_CLIENT_ID_PADRAO;
+const apiBaseUrl = normalizarApiBaseUrl(
+  sanitizarTexto(parametros.get("apiBaseUrl")) || API_BASE_URL_PADRAO,
+);
+let modoAtual = parametros.get("mode") === "register" ? "register" : "login";
+let autenticacaoEmAndamento = false;
 
 const notice = document.getElementById("notice");
 const statusBox = document.getElementById("status");
+const googleButtonContainer = document.getElementById("googleButton");
+const googleCard = document.getElementById("googleAuth");
+const rememberInput = document.getElementById("remember");
+const tabs = Array.from(document.querySelectorAll("[data-mode]"));
 
-function decodificarJwt(token) {
-  const base64Url = token.split(".")[1];
-  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  const jsonPayload = decodeURIComponent(
-    atob(base64)
-      .split("")
-      .map(function (c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-      })
-      .join("")
-  );
-  return JSON.parse(jsonPayload);
-}
+tabs.forEach((tab) => {
+  tab.addEventListener("click", () => definirModo(tab.dataset.mode));
+});
 
-window.handleGoogleLogin = async function (response) {
-  try {
-    setStatus("Processando conta Google...");
+window.addEventListener("load", () => {
+  definirModo(modoAtual);
+  inicializarBotaoGoogle();
+});
 
-    const googlePayload = decodificarJwt(response.credential);
-    const emailGoogle = sanitizarTexto(googlePayload.email);
-    const nomeGoogle = sanitizarTexto(googlePayload.name);
-    const fotoGoogle = sanitizarTexto(googlePayload.picture);
-
-    let usuario = await buscarUsuarioPorEmail(emailGoogle);
-
-    if (!usuario) {
-      setStatus("Criando conta com os dados do Google...");
-
-      const bodyParams = new URLSearchParams();
-      bodyParams.set("nome", nomeGoogle);
-      bodyParams.set("email", emailGoogle);
-      bodyParams.set("token_gmail", "google");
-      bodyParams.set("url_image_perfil", fotoGoogle);
-
-      const resposta = await fetch(`${apiBaseUrl}/usuarios`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json",
-        },
-        body: bodyParams.toString(),
-      });
-
-      if (!resposta.ok) {
-        throw new Error(await extrairDetalheDeErro(resposta));
-      }
-
-      usuario = {
-        nome: nomeGoogle,
-        email: emailGoogle,
-        tokenGmail: "google",
-      };
-    }
-
-    setStatus("Redirecionando para o VS Code...");
-    redirecionarParaExtensao({
-      nome: usuario.nome,
-      email: usuario.email,
-      tokenGmail: usuario.tokenGmail || "google",
-      remember: true,
-      mode: "login",
-    });
-  } catch (error) {
-    setStatus(erroTexto(error), true);
-  }
-};
-
-async function buscarUsuarioPorEmail(email) {
-  const resposta = await fetch(`${apiBaseUrl}/usuarios/por-email?email=${encodeURIComponent(email)}`, {
-    headers: {
-      Accept: "application/json",
-    },
+function definirModo(modo) {
+  modoAtual = modo === "register" ? "register" : "login";
+  tabs.forEach((tab) => {
+    const ativo = tab.dataset.mode === modoAtual;
+    tab.classList.toggle("active", ativo);
+    tab.setAttribute("aria-selected", String(ativo));
   });
 
-  if (!resposta.ok) {
-    if (resposta.status === 404) {
-      return undefined;
-    }
-    throw new Error(await extrairDetalheDeErro(resposta));
-  }
-
-  const dados = await resposta.json();
-  return normalizarUsuario(dados);
-}
-
-function normalizarUsuario(dados) {
-  if (!dados) {
-    return undefined;
-  }
-
-  const registro = Array.isArray(dados) ? dados[0] : dados;
-  if (!registro) {
-    return undefined;
-  }
-
-  const nome = sanitizarTexto(registro.nome || registro.name || registro.nome_completo);
-  const email = sanitizarTexto(registro.email);
-  const tokenGmail = sanitizarTexto(registro.token_gmail || registro.tokenGmail);
-
-  if (!nome || !email || !tokenGmail) {
-    return undefined;
-  }
-
-  return { nome, email, tokenGmail };
-}
-
-function redirecionarParaExtensao(dados) {
-  if (!callbackUrl) {
-    throw new Error("Callback da extensão não informado. Inicie o login a partir do VS Code.");
-  }
-
-  const url = new URL(callbackUrl);
-  url.searchParams.set("email", dados.email);
-  url.searchParams.set("nome", dados.nome);
-  url.searchParams.set("token_gmail", dados.tokenGmail);
-  url.searchParams.set("remember", dados.remember ? "1" : "0");
-  url.searchParams.set("mode", dados.mode);
-  window.location.assign(url.toString());
-}
-
-function setStatus(message, isError = false) {
-  if (statusBox) {
-    statusBox.textContent = message;
-    statusBox.classList.toggle("error", Boolean(isError));
-  }
-
   if (notice) {
-    notice.textContent = isError
-      ? "Verifique a conta Google e tente novamente."
-      : "A autenticação é feita somente com Google.";
+    notice.textContent = modoAtual === "register"
+      ? "Use sua conta Google. O servidor validará a credencial e concluirá o cadastro."
+      : "Use sua conta Google. O servidor trocará a credencial por um token seguro do sistema.";
   }
+
+  if (
+    !autenticacaoEmAndamento &&
+    window.google?.accounts?.id &&
+    googleButtonContainer?.childNodes.length
+  ) {
+    renderizarBotaoGoogle();
+  }
+}
+
+function inicializarBotaoGoogle(tentativa = 0) {
+  if (!googleCard || !googleButtonContainer) {
+    return;
+  }
+
+  if (!googleClientId) {
+    bloquearGoogle(
+      "Client ID do Google ausente. Configure flexboxTrainer.googleClientId.",
+    );
+    return;
+  }
+
+  if (!window.google?.accounts?.id) {
+    if (tentativa < 20) {
+      window.setTimeout(() => inicializarBotaoGoogle(tentativa + 1), 250);
+      return;
+    }
+
+    bloquearGoogle(
+      "Não foi possível carregar o Google Identity Services. Verifique a conexão e bloqueadores do navegador.",
+    );
+    return;
+  }
+
+  try {
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: receberCredencialGoogle,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      ux_mode: "popup",
+    });
+
+    googleCard.classList.remove("google-auth-disabled");
+    renderizarBotaoGoogle();
+
+    setStatus("Pronto para autenticar com o Google.");
+  } catch (erro) {
+    bloquearGoogle(erroTexto(erro));
+  }
+}
+
+function renderizarBotaoGoogle() {
+  googleButtonContainer.replaceChildren();
+  window.google.accounts.id.renderButton(googleButtonContainer, {
+    type: "standard",
+    theme: "outline",
+    size: "large",
+    shape: "pill",
+    text: modoAtual === "register" ? "signup_with" : "signin_with",
+    width: Math.min(340, Math.max(240, googleButtonContainer.clientWidth || 340)),
+    logo_alignment: "left",
+  });
+}
+
+async function receberCredencialGoogle(respostaGoogle) {
+  if (autenticacaoEmAndamento) {
+    return;
+  }
+
+  const tokenGoogle = sanitizarTexto(respostaGoogle?.credential);
+  if (!tokenGoogle) {
+    setStatus("O Google não retornou uma credencial de autenticação.", true);
+    return;
+  }
+
+  autenticacaoEmAndamento = true;
+  setBusy(true);
+  setStatus("Validando sua conta Google no servidor...");
+
+  try {
+    const sessao = await trocarTokenGooglePorTokenSistema(tokenGoogle);
+
+    if (!callbackUrl) {
+      setStatus(
+        "Login validado. Abra este fluxo pela extensão para retornar automaticamente ao VS Code.",
+      );
+      return;
+    }
+
+    setStatus("Login validado. Retornando ao VS Code...");
+    redirecionarParaExtensao(sessao);
+  } catch (erro) {
+    autenticacaoEmAndamento = false;
+    setBusy(false);
+    setStatus(erroTexto(erro), true);
+  }
+}
+
+async function trocarTokenGooglePorTokenSistema(tokenGoogle) {
+  const abortController = new AbortController();
+  const timeoutId = window.setTimeout(
+    () => abortController.abort(),
+    TEMPO_LIMITE_LOGIN_MS,
+  );
+  let resposta;
+
+  try {
+    resposta = await fetch(`${apiBaseUrl}/login`, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        provider: "gmail",
+        token: tokenGoogle,
+      }),
+      signal: abortController.signal,
+    });
+  } catch (erro) {
+    if (erro instanceof DOMException && erro.name === "AbortError") {
+      throw new Error("O servidor demorou mais de 15 segundos para responder.");
+    }
+
+    const detalhe = erroTexto(erro);
+    throw new Error(
+      `Falha de rede ao acessar ${apiBaseUrl}/login: ${detalhe}. Verifique CORS, internet, firewall ou proxy.`,
+    );
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+
+  const dados = await lerResposta(resposta);
+  if (!resposta.ok) {
+    throw new Error(
+      `Login recusado pelo servidor (HTTP ${resposta.status}): ${extrairDetalhe(dados)}`,
+    );
+  }
+
+  const serverToken = extrairTokenSistema(dados);
+  if (!serverToken) {
+    throw new Error("A API de login não retornou o token do sistema.");
+  }
+
+  return {
+    serverToken,
+    provider: "gmail",
+    remember: Boolean(rememberInput?.checked),
+    mode: modoAtual,
+  };
+}
+
+function redirecionarParaExtensao(sessao) {
+  const callback = validarCallback(callbackUrl);
+  const fragmento = new URLSearchParams({
+    server_token: sessao.serverToken,
+    provider: sessao.provider,
+    remember: sessao.remember ? "1" : "0",
+    mode: sessao.mode,
+  });
+
+  if (callbackState) {
+    fragmento.set("state", callbackState);
+  }
+
+  callback.hash = fragmento.toString();
+  window.location.replace(callback.toString());
+}
+
+function validarCallback(valor) {
+  let callback;
+  try {
+    callback = new URL(valor);
+  } catch {
+    throw new Error("Callback da extensão inválido.");
+  }
+
+  if (["vscode:", "vscode-insiders:"].includes(callback.protocol)) {
+    if (callback.hostname !== "josebruno10.flexbox-trainer") {
+      throw new Error("Callback pertence a uma extensão não autorizada.");
+    }
+    return callback;
+  }
+
+  const hostPermitido =
+    callback.hostname === "localhost" ||
+    callback.hostname === "127.0.0.1" ||
+    callback.hostname === "vscode.dev" ||
+    callback.hostname === "insiders.vscode.dev";
+
+  if (!["http:", "https:"].includes(callback.protocol) || !hostPermitido) {
+    throw new Error("Destino de callback não autorizado.");
+  }
+
+  return callback;
+}
+
+function extrairTokenSistema(dados) {
+  const candidatos = [
+    dados?.access_token,
+    dados?.accessToken,
+    dados?.token,
+    dados?.jwt,
+    dados?.bearerToken,
+    dados?.data?.access_token,
+    dados?.data?.accessToken,
+    dados?.data?.token,
+    dados?.auth?.token,
+    dados?.session?.token,
+  ];
+
+  return candidatos.find(
+    (valor) => typeof valor === "string" && valor.trim().length > 0,
+  )?.trim();
+}
+
+async function lerResposta(resposta) {
+  const texto = await resposta.text();
+  if (!texto.trim()) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return { detail: texto.trim() };
+  }
+}
+
+function extrairDetalhe(dados) {
+  const detalhe = dados?.message || dados?.detail || dados?.error;
+  if (typeof detalhe === "string" && detalhe.trim()) {
+    return detalhe.trim();
+  }
+  if (Array.isArray(detalhe) && detalhe.length > 0) {
+    return detalhe
+      .map((item) => item?.msg || item?.message || JSON.stringify(item))
+      .join("; ");
+  }
+  return "Resposta sem detalhes.";
+}
+
+function normalizarApiBaseUrl(valor) {
+  const url = new URL(valor);
+  if (url.protocol !== "https:" && url.hostname !== "localhost") {
+    throw new Error("A API de autenticação deve usar HTTPS.");
+  }
+  url.hash = "";
+  url.search = "";
+  url.pathname = url.pathname.replace(/\/docs\/?$/, "").replace(/\/+$/, "");
+  return url.toString().replace(/\/$/, "");
+}
+
+function bloquearGoogle(mensagem) {
+  googleCard?.classList.add("google-auth-disabled");
+  if (googleButtonContainer) {
+    googleButtonContainer.textContent = mensagem;
+  }
+  setStatus(mensagem, true);
+}
+
+function setBusy(busy) {
+  googleCard?.classList.toggle("is-busy", busy);
+  tabs.forEach((tab) => {
+    tab.disabled = busy;
+  });
+  if (rememberInput) {
+    rememberInput.disabled = busy;
+  }
+}
+
+function setStatus(mensagem, erro = false) {
+  if (!statusBox) {
+    return;
+  }
+  statusBox.textContent = mensagem;
+  statusBox.classList.toggle("error", erro);
+  statusBox.classList.toggle("success", !erro && /validado|retornando/i.test(mensagem));
 }
 
 function sanitizarTexto(valor) {
   return String(valor || "").trim();
 }
 
-async function extrairDetalheDeErro(resposta) {
-  try {
-    const dados = await resposta.json();
-    return dados?.message || dados?.detail || `HTTP ${resposta.status}`;
-  } catch {
-    return `HTTP ${resposta.status}`;
-  }
+function erroTexto(erro) {
+  return erro instanceof Error ? erro.message : "Erro inesperado ao autenticar.";
 }
-
-function erroTexto(error) {
-  return error instanceof Error ? error.message : "Erro inesperado ao autenticar.";
-}
-
-function carregarGoogleIdentity() {
-  if (location.protocol === "file:") {
-    setStatus("Abra esta página em http(s) para usar o botão do Google.", true);
-    return;
-  }
-
-  const googleScript = document.createElement("script");
-  googleScript.src = "https://accounts.google.com/gsi/client";
-  googleScript.async = true;
-  googleScript.defer = true;
-  document.head.appendChild(googleScript);
-}
-
-setStatus("Pronto. Faça login com Google.");
-carregarGoogleIdentity();
