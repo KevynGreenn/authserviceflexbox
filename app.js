@@ -8,9 +8,16 @@ const callbackUrl = sanitizarTexto(parametros.get("callback"));
 const callbackState = sanitizarTexto(parametros.get("state"));
 const googleClientId =
   sanitizarTexto(parametros.get("googleClientId")) || GOOGLE_CLIENT_ID_PADRAO;
-const apiBaseUrl = normalizarApiBaseUrl(
-  sanitizarTexto(parametros.get("apiBaseUrl")) || API_BASE_URL_PADRAO,
-);
+let apiBaseUrl = API_BASE_URL_PADRAO;
+let erroConfiguracao = "";
+
+try {
+  apiBaseUrl = normalizarApiBaseUrl(
+    sanitizarTexto(parametros.get("apiBaseUrl")) || API_BASE_URL_PADRAO,
+  );
+} catch (erro) {
+  erroConfiguracao = erroTexto(erro);
+}
 let modoAtual = parametros.get("mode") === "register" ? "register" : "login";
 let autenticacaoEmAndamento = false;
 
@@ -27,7 +34,21 @@ tabs.forEach((tab) => {
 
 window.addEventListener("load", () => {
   definirModo(modoAtual);
+  if (erroConfiguracao) {
+    bloquearGoogle(erroConfiguracao);
+    return;
+  }
   inicializarBotaoGoogle();
+});
+
+let resizeTimer;
+window.addEventListener("resize", () => {
+  window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(() => {
+    if (!autenticacaoEmAndamento && window.google?.accounts?.id) {
+      renderizarBotaoGoogle();
+    }
+  }, 150);
 });
 
 function definirModo(modo) {
@@ -103,7 +124,7 @@ function renderizarBotaoGoogle() {
     size: "large",
     shape: "pill",
     text: modoAtual === "register" ? "signup_with" : "signin_with",
-    width: Math.min(340, Math.max(240, googleButtonContainer.clientWidth || 340)),
+    width: Math.min(340, Math.max(1, googleButtonContainer.clientWidth || 340)),
     logo_alignment: "left",
   });
 }
@@ -130,6 +151,8 @@ async function receberCredencialGoogle(respostaGoogle) {
       setStatus(
         "Login validado. Abra este fluxo pela extensão para retornar automaticamente ao VS Code.",
       );
+      autenticacaoEmAndamento = false;
+      setBusy(false);
       return;
     }
 
@@ -287,7 +310,12 @@ function extrairDetalhe(dados) {
 }
 
 function normalizarApiBaseUrl(valor) {
-  const url = new URL(valor);
+  let url;
+  try {
+    url = new URL(valor);
+  } catch {
+    throw new Error("A URL da API de autenticação é inválida.");
+  }
   if (url.protocol !== "https:" && url.hostname !== "localhost") {
     throw new Error("A API de autenticação deve usar HTTPS.");
   }
