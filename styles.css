@@ -292,6 +292,39 @@ input:disabled {
   }
 }
 
+.google-oauth-button {
+  display: flex;
+  width: min(340px, 100%);
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  padding: 10px 18px;
+  border: 1px solid #c5cad3;
+  border-radius: 999px;
+  color: #202124;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.google-oauth-button:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  transform: translateY(-1px);
+}
+
+.google-oauth-button:focus-visible {
+  outline: 3px solid rgba(66, 133, 244, 0.42);
+  outline-offset: 2px;
+}
+
+.google-oauth-mark {
+  color: #4285f4;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tab {
     transition: none;

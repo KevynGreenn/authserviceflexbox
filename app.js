@@ -6,20 +6,35 @@ const TEMPO_LIMITE_LOGIN_MS = 15_000;
 const parametros = new URLSearchParams(window.location.search);
 const callbackUrl = sanitizarTexto(parametros.get("callback"));
 const callbackState = sanitizarTexto(parametros.get("state"));
-const googleClientId =
-  sanitizarTexto(parametros.get("googleClientId")) || GOOGLE_CLIENT_ID_PADRAO;
-let apiBaseUrl = API_BASE_URL_PADRAO;
+const googleClientId = GOOGLE_CLIENT_ID_PADRAO;
+const apiBaseUrl = API_BASE_URL_PADRAO;
 let erroConfiguracao = "";
 
 try {
-  apiBaseUrl = normalizarApiBaseUrl(
-    sanitizarTexto(parametros.get("apiBaseUrl")) || API_BASE_URL_PADRAO,
+  const apiBaseUrlSolicitada = sanitizarTexto(parametros.get("apiBaseUrl"));
+  const googleClientIdSolicitado = sanitizarTexto(
+    parametros.get("googleClientId"),
   );
+
+  if (
+    apiBaseUrlSolicitada &&
+    normalizarApiBaseUrl(apiBaseUrlSolicitada) !== API_BASE_URL_PADRAO
+  ) {
+    throw new Error("A URL da API informada não é autorizada por este site.");
+  }
+
+  if (
+    googleClientIdSolicitado &&
+    googleClientIdSolicitado !== GOOGLE_CLIENT_ID_PADRAO
+  ) {
+    throw new Error("O Client ID Google informado não é autorizado por este site.");
+  }
 } catch (erro) {
   erroConfiguracao = erroTexto(erro);
 }
 let modoAtual = parametros.get("mode") === "register" ? "register" : "login";
 let autenticacaoEmAndamento = false;
+let googleTokenClient;
 
 const notice = document.getElementById("notice");
 const statusBox = document.getElementById("status");
@@ -45,7 +60,7 @@ let resizeTimer;
 window.addEventListener("resize", () => {
   window.clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(() => {
-    if (!autenticacaoEmAndamento && window.google?.accounts?.id) {
+    if (!autenticacaoEmAndamento && window.google?.accounts?.oauth2) {
       renderizarBotaoGoogle();
     }
   }, 150);
@@ -67,7 +82,7 @@ function definirModo(modo) {
 
   if (
     !autenticacaoEmAndamento &&
-    window.google?.accounts?.id &&
+    window.google?.accounts?.oauth2 &&
     googleButtonContainer?.childNodes.length
   ) {
     renderizarBotaoGoogle();
@@ -86,7 +101,7 @@ function inicializarBotaoGoogle(tentativa = 0) {
     return;
   }
 
-  if (!window.google?.accounts?.id) {
+  if (!window.google?.accounts?.oauth2) {
     if (tentativa < 20) {
       window.setTimeout(() => inicializarBotaoGoogle(tentativa + 1), 250);
       return;
@@ -99,12 +114,12 @@ function inicializarBotaoGoogle(tentativa = 0) {
   }
 
   try {
-    window.google.accounts.id.initialize({
+    googleTokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: googleClientId,
-      callback: receberCredencialGoogle,
-      auto_select: false,
-      cancel_on_tap_outside: true,
-      ux_mode: "popup",
+      scope: "openid email profile",
+      include_granted_scopes: false,
+      callback: receberTokenAcessoGoogle,
+      error_callback: tratarErroOAuthGoogle,
     });
 
     googleCard.classList.remove("google-auth-disabled");
@@ -118,30 +133,68 @@ function inicializarBotaoGoogle(tentativa = 0) {
 
 function renderizarBotaoGoogle() {
   googleButtonContainer.replaceChildren();
-  window.google.accounts.id.renderButton(googleButtonContainer, {
-    type: "standard",
-    theme: "outline",
-    size: "large",
-    shape: "pill",
-    text: modoAtual === "register" ? "signup_with" : "signin_with",
-    width: Math.min(340, Math.max(1, googleButtonContainer.clientWidth || 340)),
-    logo_alignment: "left",
-  });
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "google-oauth-button";
+  botao.setAttribute(
+    "aria-label",
+    modoAtual === "register" ? "Cadastrar com Google" : "Entrar com Google",
+  );
+
+  const marca = document.createElement("span");
+  marca.className = "google-oauth-mark";
+  marca.textContent = "G";
+
+  const texto = document.createElement("span");
+  texto.textContent = modoAtual === "register"
+    ? "Cadastrar com Google"
+    : "Entrar com Google";
+
+  botao.append(marca, texto);
+  botao.addEventListener("click", solicitarTokenAcessoGoogle);
+  googleButtonContainer.appendChild(botao);
 }
 
-async function receberCredencialGoogle(respostaGoogle) {
+function solicitarTokenAcessoGoogle() {
   if (autenticacaoEmAndamento) {
     return;
   }
 
-  const tokenGoogle = sanitizarTexto(respostaGoogle?.credential);
-  if (!tokenGoogle) {
-    setStatus("O Google não retornou uma credencial de autenticação.", true);
+  if (!googleTokenClient) {
+    setStatus("O cliente OAuth do Google ainda não foi inicializado.", true);
     return;
   }
 
   autenticacaoEmAndamento = true;
   setBusy(true);
+  setStatus("Abrindo a seleção de conta Google...");
+  googleTokenClient.requestAccessToken({ prompt: "select_account" });
+}
+
+async function receberTokenAcessoGoogle(respostaGoogle) {
+  const tokenGoogle = sanitizarTexto(respostaGoogle?.access_token);
+  if (respostaGoogle?.error || !tokenGoogle) {
+    autenticacaoEmAndamento = false;
+    setBusy(false);
+    setStatus(
+      respostaGoogle?.error_description ||
+        respostaGoogle?.error ||
+        "O Google não retornou um token de acesso.",
+      true,
+    );
+    return;
+  }
+
+  if (!possuiEscoposGoogleNecessarios(respostaGoogle)) {
+    autenticacaoEmAndamento = false;
+    setBusy(false);
+    setStatus(
+      "Autorize o acesso ao e-mail e ao perfil para continuar.",
+      true,
+    );
+    return;
+  }
+
   setStatus("Validando sua conta Google no servidor...");
 
   try {
@@ -163,6 +216,21 @@ async function receberCredencialGoogle(respostaGoogle) {
     setBusy(false);
     setStatus(erroTexto(erro), true);
   }
+}
+
+function tratarErroOAuthGoogle(erro) {
+  autenticacaoEmAndamento = false;
+  setBusy(false);
+  const tipo = sanitizarTexto(erro?.type);
+  const mensagens = {
+    popup_closed: "A janela do Google foi fechada antes da conclusão do login.",
+    popup_failed_to_open: "O navegador bloqueou a janela de login do Google.",
+    unknown: "O Google não conseguiu concluir a autenticação.",
+  };
+  setStatus(
+    mensagens[tipo] || `Falha no login Google: ${tipo || "erro desconhecido"}.`,
+    true,
+  );
 }
 
 async function trocarTokenGooglePorTokenSistema(tokenGoogle) {
@@ -187,7 +255,7 @@ async function trocarTokenGooglePorTokenSistema(tokenGoogle) {
       signal: abortController.signal,
     });
   } catch (erro) {
-    if (erro instanceof DOMException && erro.name === "AbortError") {
+    if (erro?.name === "AbortError") {
       throw new Error("O servidor demorou mais de 15 segundos para responder.");
     }
 
@@ -217,6 +285,20 @@ async function trocarTokenGooglePorTokenSistema(tokenGoogle) {
     remember: Boolean(rememberInput?.checked),
     mode: modoAtual,
   };
+}
+
+function possuiEscoposGoogleNecessarios(respostaGoogle) {
+  const escopos = new Set(
+    sanitizarTexto(respostaGoogle?.scope).split(/\s+/).filter(Boolean),
+  );
+
+  return (
+    escopos.has("openid") &&
+    (escopos.has("email") ||
+      escopos.has("https://www.googleapis.com/auth/userinfo.email")) &&
+    (escopos.has("profile") ||
+      escopos.has("https://www.googleapis.com/auth/userinfo.profile"))
+  );
 }
 
 function redirecionarParaExtensao(sessao) {
