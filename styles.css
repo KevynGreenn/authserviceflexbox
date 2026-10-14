@@ -171,42 +171,8 @@ h1 span {
   background: var(--papel);
 }
 
-.tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.tab {
-  min-height: 38px;
-  padding: 8px 12px;
-  border: 1px solid var(--tinta);
-  border-radius: 0;
-  font-family: var(--fonte-mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--tinta);
-  background: transparent;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.tab + .tab {
-  border-left: 0;
-}
-
-.tab:hover:not(:disabled):not(.active) {
-  background: var(--superficie);
-}
-
-.tab.active {
-  color: var(--papel);
-  background: var(--tinta);
-}
-
 .notice {
-  margin: 22px 0 16px;
+  margin: 0 0 16px;
   color: var(--texto-suave);
 }
 
@@ -320,7 +286,6 @@ h1 span {
   color: var(--texto-suave);
 }
 
-.tab:focus-visible,
 .google-oauth-button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--rosa);

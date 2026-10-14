@@ -35,23 +35,17 @@ try {
 } catch (erro) {
   erroConfiguracao = erroTexto(erro);
 }
-let modoAtual = parametros.get("mode") === "register" ? "register" : "login";
+// Login e cadastro são o mesmo pedido ao servidor; o modo só volta à
+// extensão, como antes, para não mudar o que ela recebe.
+const modoAtual = parametros.get("mode") === "register" ? "register" : "login";
 let autenticacaoEmAndamento = false;
 let googleTokenClient;
 
-const notice = document.getElementById("notice");
 const statusBox = document.getElementById("status");
 const googleButtonContainer = document.getElementById("googleButton");
 const googleCard = document.getElementById("googleAuth");
 const rememberInput = document.getElementById("remember");
-const tabs = Array.from(document.querySelectorAll("[data-mode]"));
-
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => definirModo(tab.dataset.mode));
-});
-
 window.addEventListener("load", () => {
-  definirModo(modoAtual);
   if (erroConfiguracao) {
     bloquearGoogle(erroConfiguracao);
     return;
@@ -68,29 +62,6 @@ window.addEventListener("resize", () => {
     }
   }, 150);
 });
-
-function definirModo(modo) {
-  modoAtual = modo === "register" ? "register" : "login";
-  tabs.forEach((tab) => {
-    const ativo = tab.dataset.mode === modoAtual;
-    tab.classList.toggle("active", ativo);
-    tab.setAttribute("aria-selected", String(ativo));
-  });
-
-  if (notice) {
-    notice.textContent = modoAtual === "register"
-      ? "Cadastre-se com a sua conta Google."
-      : "Use a conta Google com o e-mail cadastrado no torneio.";
-  }
-
-  if (
-    !autenticacaoEmAndamento &&
-    window.google?.accounts?.oauth2 &&
-    googleButtonContainer?.childNodes.length
-  ) {
-    renderizarBotaoGoogle();
-  }
-}
 
 function inicializarBotaoGoogle(tentativa = 0) {
   if (!googleCard || !googleButtonContainer) {
@@ -139,19 +110,13 @@ function renderizarBotaoGoogle() {
   const botao = document.createElement("button");
   botao.type = "button";
   botao.className = "google-oauth-button";
-  botao.setAttribute(
-    "aria-label",
-    modoAtual === "register" ? "Cadastrar com Google" : "Entrar com Google",
-  );
 
   const marca = document.createElement("span");
   marca.className = "google-oauth-mark";
   marca.innerHTML = MARCA_GOOGLE;
 
   const texto = document.createElement("span");
-  texto.textContent = modoAtual === "register"
-    ? "Cadastrar com Google"
-    : "Entrar com Google";
+  texto.textContent = "Entrar com Google";
 
   botao.append(marca, texto);
   botao.addEventListener("click", solicitarTokenAcessoGoogle);
@@ -420,9 +385,6 @@ function bloquearGoogle(mensagem) {
 
 function setBusy(busy) {
   googleCard?.classList.toggle("is-busy", busy);
-  tabs.forEach((tab) => {
-    tab.disabled = busy;
-  });
   if (rememberInput) {
     rememberInput.disabled = busy;
   }
