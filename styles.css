@@ -1,18 +1,66 @@
-:root {
-  color-scheme: dark;
-  --bg-1: #06101c;
-  --bg-2: #0c1828;
-  --panel: rgba(11, 21, 35, 0.9);
-  --border: rgba(164, 190, 218, 0.18);
-  --text: #f3f7ff;
-  --muted: #b7c8dc;
-  --accent: #4cba72;
-  --accent-2: #86e5aa;
-  --danger: #ff9a9a;
-  --success: #96edb7;
+/* Mesma identidade da extensão: Space Grotesk e DM Mono (licença OFL, em
+   fontes/), o degradê do projeto e botões em tinta com sombra rosa. */
+@font-face {
+  font-family: "Space Grotesk";
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fontes/space-grotesk.woff2") format("woff2");
 }
 
-* {
+@font-face {
+  font-family: "DM Mono";
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fontes/dm-mono-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "DM Mono";
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fontes/dm-mono-500.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: light;
+  --papel: #fffaf7;
+  --tinta: #151218;
+  --texto-suave: #6c6066;
+  --linha: rgba(21, 18, 24, 0.16);
+  --linha-tracejada: rgba(21, 18, 24, 0.24);
+  --grade: rgba(21, 18, 24, 0.045);
+  --superficie: rgba(21, 18, 24, 0.045);
+  --rosa: #f32f67;
+  --degrade: linear-gradient(100deg, #df18b1, #ec3370 45%, #f95720);
+  --erro: #c4213b;
+  --sucesso: #13804b;
+  --fonte-texto: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fonte-mono: "DM Mono", ui-monospace, monospace;
+  --fonte-titulo: "Space Grotesk", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --papel: #151218;
+    --tinta: #f4efec;
+    --texto-suave: #a99ea4;
+    --linha: rgba(244, 239, 236, 0.16);
+    --linha-tracejada: rgba(244, 239, 236, 0.24);
+    --grade: rgba(244, 239, 236, 0.04);
+    --superficie: rgba(244, 239, 236, 0.06);
+    --erro: #ff8095;
+    --sucesso: #5fd39b;
+  }
+}
+
+[hidden] {
+  display: none !important;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -24,12 +72,16 @@ body {
 body {
   margin: 0;
   min-width: 320px;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: var(--text);
-  background:
-    radial-gradient(circle at 12% 8%, rgba(76, 186, 114, 0.24), transparent 30%),
-    radial-gradient(circle at 90% 88%, rgba(67, 142, 218, 0.18), transparent 32%),
-    linear-gradient(155deg, var(--bg-1), var(--bg-2));
+  font-family: var(--fonte-texto);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tinta);
+  background-color: var(--papel);
+  /* A grade de 48 px lembra a área de desenho dos desafios. */
+  background-image:
+    linear-gradient(var(--grade) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grade) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
 button,
@@ -37,175 +89,168 @@ input {
   font: inherit;
 }
 
-.layout {
-  min-height: 100vh;
+.faixa {
+  height: 4px;
+  background: var(--degrade);
+}
+
+.pagina {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(340px, 470px);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  gap: 64px;
   align-items: center;
-  padding: 32px;
+  max-width: 1120px;
+  min-height: calc(100vh - 4px);
+  margin: 0 auto;
+  padding: 48px 32px;
 }
 
-.hero,
-.panel {
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: var(--panel);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 28px 88px rgba(0, 0, 0, 0.36);
-}
-
-.hero {
-  padding: clamp(28px, 5vw, 52px);
-}
-
-.panel {
-  padding: 24px;
-}
-
-.eyebrow {
-  margin: 0 0 14px;
-  color: #8ba5bd;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+.rotulo {
+  margin: 0;
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.rotulo .numero {
+  color: var(--tinta);
 }
 
 h1 {
-  max-width: 720px;
-  margin: 0;
-  font-size: clamp(2.5rem, 6vw, 5.5rem);
-  line-height: 0.96;
-  letter-spacing: -0.045em;
+  margin: 18px 0 0;
+  font-family: var(--fonte-titulo);
+  font-size: clamp(56px, 9vw, 120px);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 0.88;
 }
 
-.lead {
-  max-width: 37rem;
-  margin: 22px 0 0;
-  color: var(--muted);
-  font-size: 1.05rem;
-  line-height: 1.7;
+h1 span {
+  display: block;
+  width: fit-content;
+  color: transparent;
+  background: var(--degrade);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 30px;
+.descricao {
+  max-width: 30rem;
+  margin: 28px 0 0;
+  font-size: 18px;
+  color: var(--texto-suave);
 }
 
-.chips span {
-  padding: 9px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.05);
-  font-size: 0.88rem;
+.painel {
+  padding: 28px;
+  border: 1px solid var(--tinta);
+  background: var(--papel);
 }
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 18px;
+  grid-template-columns: 1fr 1fr;
 }
 
 .tab {
-  padding: 13px 18px;
-  border: 0;
-  border-radius: 999px;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--tinta);
+  border-radius: 0;
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  background: transparent;
   cursor: pointer;
-  font-weight: 700;
-  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+  transition: background 120ms ease;
 }
 
-.tab:hover:not(:disabled) {
-  transform: translateY(-1px);
+.tab + .tab {
+  border-left: 0;
+}
+
+.tab:hover:not(:disabled):not(.active) {
+  background: var(--superficie);
 }
 
 .tab.active {
-  color: #07111f;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-}
-
-.tab:focus-visible,
-input:focus-visible {
-  outline: 3px solid rgba(125, 226, 164, 0.45);
-  outline-offset: 2px;
-}
-
-.notice,
-.google-auth,
-.status,
-.security-note {
-  border: 1px solid rgba(159, 180, 209, 0.14);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--papel);
+  background: var(--tinta);
 }
 
 .notice {
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
-.google-auth {
-  padding: 18px;
-}
-
-.google-auth-heading {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.google-mark {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  place-items: center;
-  border-radius: 50%;
-  color: #172033;
-  background: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.google-auth h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.google-auth p {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 0.88rem;
+  margin: 22px 0 16px;
+  color: var(--texto-suave);
 }
 
 .google-button-wrap {
   display: flex;
-  min-height: 44px;
+  min-height: 46px;
+}
+
+.google-oauth-button {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
   align-items: center;
   justify-content: center;
-  margin-top: 18px;
-  overflow: hidden;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid var(--tinta);
+  border-radius: 2px;
+  font-family: var(--fonte-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--papel);
+  background: var(--tinta);
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+/* A sombra rosa desloca o botão como uma impressão fora de registro. */
+.google-oauth-button:hover {
+  box-shadow: 4px 4px 0 var(--rosa);
+  transform: translate(-1px, -1px);
+}
+
+.google-oauth-button:active {
+  box-shadow: 1px 1px 0 var(--rosa);
+  transform: none;
+}
+
+/* O G colorido precisa de fundo branco sobre o botão escuro. */
+.google-oauth-mark {
+  display: grid;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  background: #fff;
+}
+
+.google-oauth-mark svg {
+  width: 16px;
+  height: 16px;
 }
 
 .google-auth-disabled .google-button-wrap {
-  justify-content: flex-start;
-  padding: 11px 12px;
-  border: 1px dashed rgba(255, 154, 154, 0.45);
-  border-radius: 12px;
-  color: var(--danger);
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px dashed var(--erro);
+  font-size: 14px;
+  color: var(--erro);
 }
 
 .google-auth.is-busy {
-  opacity: 0.72;
+  opacity: 0.6;
   pointer-events: none;
 }
 
@@ -213,120 +258,84 @@ input:focus-visible {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-top: 16px;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--texto-suave);
   cursor: pointer;
 }
 
 .remember-option input {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   margin: 0;
-  accent-color: var(--accent);
-}
-
-.security-note {
-  margin: 16px 0 0;
-  padding: 13px 15px;
-  color: #9fb1c5;
-  font-size: 0.82rem;
-  line-height: 1.55;
-}
-
-.security-note code {
-  color: var(--accent-2);
+  accent-color: var(--rosa);
 }
 
 .status {
-  min-height: 62px;
-  margin-top: 16px;
-  padding: 14px 16px;
-  color: var(--muted);
-  line-height: 1.55;
+  margin-top: 18px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--rosa);
+  font-size: 14px;
+  background: var(--superficie);
 }
 
 .status.error {
-  color: var(--danger);
-  border-color: rgba(255, 154, 154, 0.28);
+  border-left-color: var(--erro);
+  color: var(--erro);
 }
 
 .status.success {
-  color: var(--success);
-  border-color: rgba(150, 237, 183, 0.28);
+  border-left-color: var(--sucesso);
+  color: var(--sucesso);
+}
+
+.rodape {
+  margin: 22px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--linha-tracejada);
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.tab:focus-visible,
+.google-oauth-button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--rosa);
+  outline-offset: 2px;
 }
 
 button:disabled,
 input:disabled {
   cursor: progress;
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
-@media (max-width: 920px) {
-  .layout {
+@media (max-width: 820px) {
+  .pagina {
     grid-template-columns: 1fr;
+    gap: 36px;
+    align-content: start;
+    padding: 36px 16px;
   }
 
   h1 {
-    max-width: 600px;
-  }
-}
-
-@media (max-width: 560px) {
-  .layout {
-    padding: 16px;
+    font-size: clamp(48px, 15vw, 88px);
   }
 
-  .hero,
-  .panel {
+  .descricao {
+    margin-top: 20px;
+    font-size: 16px;
+  }
+
+  .painel {
     padding: 20px;
-    border-radius: 22px;
   }
-
-  .chips {
-    display: grid;
-  }
-
-  .google-auth {
-    padding: 16px;
-  }
-}
-
-.google-oauth-button {
-  display: flex;
-  width: min(340px, 100%);
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 11px;
-  padding: 10px 18px;
-  border: 1px solid #c5cad3;
-  border-radius: 999px;
-  color: #202124;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 600;
-  transition: box-shadow 120ms ease, transform 120ms ease;
-}
-
-.google-oauth-button:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
-  transform: translateY(-1px);
-}
-
-.google-oauth-button:focus-visible {
-  outline: 3px solid rgba(66, 133, 244, 0.42);
-  outline-offset: 2px;
-}
-
-.google-oauth-mark {
-  color: #4285f4;
-  font-size: 1.05rem;
-  font-weight: 800;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tab {
+  .tab,
+  .google-oauth-button {
     transition: none;
   }
 }

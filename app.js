@@ -2,6 +2,9 @@ const GOOGLE_CLIENT_ID_PADRAO =
   "248632474679-8663hgsnun8q5ddq98cc2kf23u23844p.apps.googleusercontent.com";
 const API_BASE_URL_PADRAO = "https://frontendteamscup.com.br/api";
 const TEMPO_LIMITE_LOGIN_MS = 15_000;
+// Marca oficial do Google, como nos botões de login do próprio Google.
+const MARCA_GOOGLE =
+  '<svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.87 2.69-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.8.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.96 10.71A5.41 5.41 0 0 1 3.68 9c0-.59.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58A8.65 8.65 0 0 0 9 0 9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/></svg>';
 
 const parametros = new URLSearchParams(window.location.search);
 const callbackUrl = sanitizarTexto(parametros.get("callback"));
@@ -76,8 +79,8 @@ function definirModo(modo) {
 
   if (notice) {
     notice.textContent = modoAtual === "register"
-      ? "Use sua conta Google. O servidor validará a credencial e concluirá o cadastro."
-      : "Use sua conta Google. O servidor trocará a credencial por um token seguro do sistema.";
+      ? "Cadastre-se com a sua conta Google."
+      : "Use a conta Google com o e-mail cadastrado no torneio.";
   }
 
   if (
@@ -125,7 +128,7 @@ function inicializarBotaoGoogle(tentativa = 0) {
     googleCard.classList.remove("google-auth-disabled");
     renderizarBotaoGoogle();
 
-    setStatus("Pronto para autenticar com o Google.");
+    setStatus("");
   } catch (erro) {
     bloquearGoogle(erroTexto(erro));
   }
@@ -143,7 +146,7 @@ function renderizarBotaoGoogle() {
 
   const marca = document.createElement("span");
   marca.className = "google-oauth-mark";
-  marca.textContent = "G";
+  marca.innerHTML = MARCA_GOOGLE;
 
   const texto = document.createElement("span");
   texto.textContent = modoAtual === "register"
@@ -167,7 +170,7 @@ function solicitarTokenAcessoGoogle() {
 
   autenticacaoEmAndamento = true;
   setBusy(true);
-  setStatus("Abrindo a seleção de conta Google...");
+  setStatus("Escolha a conta na janela do Google…");
   googleTokenClient.requestAccessToken({ prompt: "select_account" });
 }
 
@@ -195,21 +198,21 @@ async function receberTokenAcessoGoogle(respostaGoogle) {
     return;
   }
 
-  setStatus("Validando sua conta Google no servidor...");
+  setStatus("Validando a conta no servidor…");
 
   try {
     const sessao = await trocarTokenGooglePorTokenSistema(tokenGoogle);
 
     if (!callbackUrl) {
       setStatus(
-        "Login validado. Abra este fluxo pela extensão para retornar automaticamente ao VS Code.",
+        "Login validado. Para voltar ao VS Code, entre pela extensão.",
       );
       autenticacaoEmAndamento = false;
       setBusy(false);
       return;
     }
 
-    setStatus("Login validado. Retornando ao VS Code...");
+    setStatus("Login validado. Voltando ao VS Code…");
     redirecionarParaExtensao(sessao);
   } catch (erro) {
     autenticacaoEmAndamento = false;
@@ -223,7 +226,7 @@ function tratarErroOAuthGoogle(erro) {
   setBusy(false);
   const tipo = sanitizarTexto(erro?.type);
   const mensagens = {
-    popup_closed: "A janela do Google foi fechada antes da conclusão do login.",
+    popup_closed: "A janela do Google foi fechada antes do fim do login.",
     popup_failed_to_open: "O navegador bloqueou a janela de login do Google.",
     unknown: "O Google não conseguiu concluir a autenticação.",
   };
@@ -429,7 +432,9 @@ function setStatus(mensagem, erro = false) {
   if (!statusBox) {
     return;
   }
+  // Sem mensagem, o quadro some: os botões já dizem o que fazer.
   statusBox.textContent = mensagem;
+  statusBox.hidden = !mensagem;
   statusBox.classList.toggle("error", erro);
   statusBox.classList.toggle("success", !erro && /validado|retornando/i.test(mensagem));
 }
