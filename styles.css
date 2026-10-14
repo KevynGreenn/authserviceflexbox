@@ -1,5 +1,5 @@
 /* Mesma identidade da extensão: Space Grotesk e DM Mono (licença OFL, em
-   fontes/), o degradê do projeto e botões em tinta com sombra rosa. */
+   fontes/), o verde do projeto e botões em tinta com sombra na cor de destaque. */
 @font-face {
   font-family: "Space Grotesk";
   font-weight: 300 700;
@@ -30,8 +30,10 @@
   --linha-tracejada: rgba(21, 18, 24, 0.24);
   --grade: rgba(21, 18, 24, 0.045);
   --superficie: rgba(21, 18, 24, 0.045);
-  --rosa: #f32f67;
-  --degrade: linear-gradient(100deg, #df18b1, #ec3370 45%, #f95720);
+  --acento: #16a34a;
+  --degrade: linear-gradient(100deg, #65a30d, #16a34a 45%, #059669);
+  /* No papel claro, o título usa verdes mais escuros para ficar legível. */
+  --degrade-titulo: linear-gradient(100deg, #4d7c0f, #15803d 45%, #047857);
   --erro: #c4213b;
   --sucesso: #13804b;
   --fonte-texto: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -42,6 +44,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
+    --degrade-titulo: var(--degrade);
     --papel: #151218;
     --tinta: #f4efec;
     --texto-suave: #a99ea4;
@@ -153,7 +156,7 @@ h1 span {
   display: block;
   width: fit-content;
   color: transparent;
-  background: var(--degrade);
+  background: var(--degrade-titulo);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -202,14 +205,15 @@ h1 span {
   transition: box-shadow 120ms ease, transform 120ms ease;
 }
 
-/* A sombra rosa desloca o botão como uma impressão fora de registro. */
+/* A sombra na cor de destaque desloca o botão como uma impressão fora de
+   registro. */
 .google-oauth-button:hover {
-  box-shadow: 4px 4px 0 var(--rosa);
+  box-shadow: 4px 4px 0 var(--acento);
   transform: translate(-1px, -1px);
 }
 
 .google-oauth-button:active {
-  box-shadow: 1px 1px 0 var(--rosa);
+  box-shadow: 1px 1px 0 var(--acento);
   transform: none;
 }
 
@@ -255,14 +259,14 @@ h1 span {
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: var(--rosa);
+  accent-color: var(--acento);
 }
 
 .status {
   animation: surgir 260ms ease both;
   margin-top: 18px;
   padding: 10px 12px;
-  border-left: 2px solid var(--rosa);
+  border-left: 2px solid var(--acento);
   font-size: 14px;
   background: var(--superficie);
 }
@@ -288,7 +292,7 @@ h1 span {
 
 .google-oauth-button:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--rosa);
+  outline: 2px solid var(--acento);
   outline-offset: 2px;
 }
 
