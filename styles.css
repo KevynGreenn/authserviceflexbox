@@ -92,6 +92,27 @@ input {
 .faixa {
   height: 4px;
   background: var(--degrade);
+  background-size: 200% 100%;
+  animation: correr 9s ease-in-out infinite alternate;
+}
+
+@keyframes correr {
+  to {
+    background-position: 100% 0;
+  }
+}
+
+/* As partes da página surgem uma depois da outra ao abrir. */
+.surge {
+  animation: surgir 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--ordem, 0) * 80ms);
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
 .pagina {
@@ -272,6 +293,7 @@ h1 span {
 }
 
 .status {
+  animation: surgir 260ms ease both;
   margin-top: 18px;
   padding: 10px 12px;
   border-left: 2px solid var(--rosa);
@@ -334,8 +356,10 @@ input:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tab,
-  .google-oauth-button {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
