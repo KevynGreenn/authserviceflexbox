@@ -73,6 +73,7 @@ body {
 }
 
 body {
+  position: relative;
   margin: 0;
   min-width: 320px;
   font-family: var(--fonte-texto);
@@ -290,6 +291,20 @@ h1 span {
   color: var(--texto-suave);
 }
 
+/* Quem fez a extensão, no pé da página, sem chamar atenção. Fica na margem
+   de baixo da página, sem empurrar o conteúdo. */
+.creditos {
+  position: absolute;
+  right: 0;
+  bottom: 12px;
+  left: 0;
+  padding: 0 16px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--texto-suave);
+  opacity: 0.8;
+}
+
 .google-oauth-button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--acento);
@@ -307,7 +322,8 @@ input:disabled {
     grid-template-columns: 1fr;
     gap: 36px;
     align-content: start;
-    padding: 36px 16px;
+    /* Embaixo, espaço para os créditos. */
+    padding: 36px 16px 56px;
   }
 
   h1 {
