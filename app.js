@@ -42,10 +42,21 @@ let autenticacaoEmAndamento = false;
 let googleTokenClient;
 
 const statusBox = document.getElementById("status");
+const rodape = document.getElementById("rodape");
 const googleButtonContainer = document.getElementById("googleButton");
 const googleCard = document.getElementById("googleAuth");
 const rememberInput = document.getElementById("remember");
 window.addEventListener("load", () => {
+  // A extensão no VS Code desktop recebe o login sozinha, sem o navegador
+  // pedir para abrir o VS Code.
+  try {
+    if (rodape && callbackUrl && ehRetornoLocal(new URL(callbackUrl))) {
+      rodape.textContent = "Ao terminar, o login vai sozinho para o VS Code.";
+    }
+  } catch {
+    // Um callback inválido aparece como erro ao terminar o login.
+  }
+
   if (erroConfiguracao) {
     bloquearGoogle(erroConfiguracao);
     return;
@@ -271,19 +282,52 @@ function possuiEscoposGoogleNecessarios(respostaGoogle) {
 
 function redirecionarParaExtensao(sessao) {
   const callback = validarCallback(callbackUrl);
-  const fragmento = new URLSearchParams({
+  const dados = {
     server_token: sessao.serverToken,
     provider: sessao.provider,
     remember: sessao.remember ? "1" : "0",
     mode: sessao.mode,
-  });
+  };
 
   if (callbackState) {
-    fragmento.set("state", callbackState);
+    dados.state = callbackState;
   }
 
-  callback.hash = fragmento.toString();
+  // O servidor local da extensão (VS Code desktop) recebe o login num
+  // formulário: no endereço, o token ficaria no histórico do navegador, que
+  // num laboratório outros alunos usam.
+  if (ehRetornoLocal(callback)) {
+    enviarFormulario(callback, dados);
+    return;
+  }
+
+  callback.hash = new URLSearchParams(dados).toString();
   window.location.replace(callback.toString());
+}
+
+function ehRetornoLocal(callback) {
+  return (
+    ["http:", "https:"].includes(callback.protocol) &&
+    ["localhost", "127.0.0.1"].includes(callback.hostname)
+  );
+}
+
+function enviarFormulario(destino, dados) {
+  const formulario = document.createElement("form");
+  formulario.method = "POST";
+  formulario.action = destino.toString();
+  formulario.hidden = true;
+
+  for (const [nome, valor] of Object.entries(dados)) {
+    const campo = document.createElement("input");
+    campo.type = "hidden";
+    campo.name = nome;
+    campo.value = valor;
+    formulario.append(campo);
+  }
+
+  document.body.append(formulario);
+  formulario.submit();
 }
 
 function validarCallback(valor) {
