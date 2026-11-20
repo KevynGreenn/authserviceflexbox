@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="degrade" x1="0" y1="0" x2="1" y2="0.35">
+      <stop offset="0" stop-color="#65a30d"/>
+      <stop offset="0.45" stop-color="#16a34a"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="44" fill="#151218"/>
+  <!-- Um desafio em miniatura: blocos e um círculo, como os do gerador, no
+       verde do projeto e com o círculo vermelho, como na logo do IF. -->
+  <rect x="40" y="40" width="176" height="64" rx="4" fill="#fffaf7"/>
+  <rect x="40" y="120" width="80" height="96" rx="4" fill="url(#degrade)"/>
+  <circle cx="176" cy="168" r="40" fill="#dc2626"/>
+</svg>
